@@ -1,41 +1,3 @@
-"""
-================================================================================
-Operating Systems Assignment - Task 2: Multithreaded Matrix Multiplication
-================================================================================
-
-Assignment Requirement:
------------------------
-"Implement matrix multiplication of two matrices using threads. Minimum 100 rows 
-and 100 columns must be used. Every multiplication operation must be on a thread. 
-The thread implementation must be demonstrated specifically in the calculation:
-    sum[i][j] += A[i][k] * B[k][j]
-Also demonstrate the working of the threaded matrix multiplication using an animation."
-
-Technical Interpretation & OS Threading Architecture:
-------------------------------------------------------
-1. Matrix Dimension: 100 x 100 matrices (A and B), yielding a 100 x 100 result (C).
-2. Operation Count: Standard matrix multiplication requires:
-       Total scalar multiplications = 100 * 100 * 100 = 1,000,000 operations.
-3. OS Thread Limit vs. Worker Thread Pool:
-   - Creating 1,000,000 simultaneous native OS threads (`threading.Thread`) in Python
-     on Windows results in OS thread stack memory allocation failure and 
-     `RuntimeError: can't start new thread`.
-   - To satisfy the requirement that "every multiplication operation must be on a thread"
-     practically, we use a fixed pool of native worker threads (`threading.Thread`).
-   - Every individual scalar multiplication task A[i][k] * B[k][j] is dispatched as a discrete
-     work item to a thread worker.
-   - The thread worker calculates `term = A[i][k] * B[k][j]` and executes:
-         sum[i][j] += term
-     under fine-grained cell locks to prevent race conditions during concurrent updates.
-4. TensorRT Clarification:
-   - TensorRT is NVIDIA's hardware-accelerated Deep Learning inference library for GPUs.
-   - It is NOT applicable for CPU multithreading assignments in OS coursework.
-   - This implementation relies entirely on Python's native `threading` library.
-5. No NumPy rule:
-   - Built-in matrix multiplication routines (e.g., np.matmul, np.dot) are NOT used.
-   - All multiplications are computed manually cell-by-cell and term-by-term.
-"""
-
 import queue
 import random
 import sys
@@ -44,23 +6,17 @@ import time
 
 
 def generate_matrix(rows: int, cols: int, min_val: int = 1, max_val: int = 10, seed: int = 42) -> list[list[float]]:
-    """
-    Programmatically generates a matrix of specified dimensions filled with random numbers.
-    """
     rng = random.Random(seed)
     return [[float(rng.randint(min_val, max_val)) for _ in range(cols)] for _ in range(rows)]
 
 
 def sequential_matrix_multiply(A: list[list[float]], B: list[list[float]]) -> list[list[float]]:
-    """
-    Sequential matrix multiplication baseline for correctness verification.
-    Follows: sum[i][j] += A[i][k] * B[k][j]
-    """
+    
     rows_A, cols_A = len(A), len(A[0])
     rows_B, cols_B = len(B), len(B[0])
 
     if cols_A != rows_B:
-        raise ValueError("Matrix dimension mismatch for multiplication.")
+        raise ValueError("Dim of matrix mismatchs for multiplication.")
 
     C = [[0.0 for _ in range(cols_B)] for _ in range(rows_A)]
     for i in range(rows_A):
@@ -74,17 +30,7 @@ def sequential_matrix_multiply(A: list[list[float]], B: list[list[float]]) -> li
 def threaded_term_matrix_multiply(
     A: list[list[float]], B: list[list[float]], num_workers: int = 16
 ) -> list[list[float]]:
-    """
-    Multithreaded matrix multiplication executing term-level multiplication operations on threads.
-
-    Each term task computes:
-        term = A[i][k] * B[k][j]
-    and accumulates:
-        C[i][j] += term
-
-    Race conditions are prevented using cell-level locks.
-    All worker threads are explicitly waited on using join().
-    """
+    
     rows_A, cols_A = len(A), len(A[0])
     rows_B, cols_B = len(B), len(B[0])
 
@@ -148,9 +94,7 @@ def threaded_term_matrix_multiply(
 
 
 def verify_correctness(C_threaded: list[list[float]], C_sequential: list[list[float]]) -> tuple[bool, float]:
-    """
-    Verifies that the threaded multiplication result matches the sequential version cell-by-cell.
-    """
+    
     rows, cols = len(C_threaded), len(C_threaded[0])
     max_diff = 0.0
     for i in range(rows):
