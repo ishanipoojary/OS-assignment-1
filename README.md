@@ -13,7 +13,9 @@ Implemented the Producer-Consumer problem using Python threads and a bounded que
 
 ### Run
 
-    python prodd_con.py
+```bash
+python prodd_con.py
+```
 
 ## Task 2: Threaded Matrix Multiplication
 
@@ -21,17 +23,32 @@ Implemented matrix multiplication using multiple Python worker threads.
 
 - Matrix size: 100 × 100
 - 16 worker threads
-- Each multiplication operation is processed by a worker thread
+- 1,000,000 individual multiplication operations
+- Each multiplication operation is processed as a separate task by a worker thread
 - Uses a thread-safe task queue
 - Uses locks to safely update matrix elements
 - Threaded result is verified against sequential matrix multiplication
 
 ### Run
 
-    python matrix_mult.py
+```bash
+python matrix_mult.py
+```
 
 ## Animation
 
-An interactive HTML animation demonstrates the working of the threaded matrix multiplication, including the task queue, worker threads, multiplication operations, and locks.
+A Python-based animation demonstrates the working of the threaded matrix multiplication, including the matrices, worker threads, task queue, multiplication operations, locks, and computation progress.
 
-    animations/matrix_multiplication.html
+The animation uses the same 100 × 100 matrix configuration and 16-worker-thread approach. Representative operations from the computation are visualized in the GIF.
+
+### Generate Animation
+
+```bash
+python animations/mat_animation.py
+```
+
+The generated GIF is:
+
+`matrix_multiply_threaded.gif`
+
+The animation files are located in the `animations` folder.
