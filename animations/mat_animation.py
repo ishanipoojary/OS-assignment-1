@@ -10,18 +10,15 @@ from matplotlib import animation
 from matplotlib.patches import Rectangle
 from matplotlib.gridspec import GridSpec
 
-# ----------------------------------------------------------------------
-# Configuration - matches the real assignment exactly.
-# ----------------------------------------------------------------------
 ROWS_A = 100
-COLS_A = 100          # == ROWS_B
+COLS_A = 100          
 COLS_B = 100
 NUM_WORKERS = 16
 SEED_A = 101
 SEED_B = 202
 
 OUTPUT_GIF = "matrix_multiply_threaded.gif"
-NUM_FRAMES = 140       # how many of the 1,000,000 real ops get animated
+NUM_FRAMES = 140      
 FPS = 4
 
 TOTAL_TASKS = ROWS_A * COLS_B * COLS_A
@@ -33,16 +30,7 @@ def generate_matrix(rows, cols, min_val=1, max_val=9, seed=42):
 
 
 def task_at_index(idx, cols_b, cols_a):
-    """
-    Given a position in the deterministic task-generation order
-    (i outer, j middle, k inner - exactly matching the real triple loop),
-    return the (i, j, k) tuple at that position. Used only to preview
-    "nearby" tasks in the queue; it is not a live introspection of the
-    queue's internal state (queue.Queue offers no safe way to peek its
-    contents while workers are draining it), but since the queue is FIFO
-    and tasks are enqueued in exactly this order, it is an accurate
-    picture of what surrounds a given point in the workload.
-    """
+    
     per_i = cols_b * cols_a
     i, rem = divmod(idx, per_i)
     j, k = divmod(rem, cols_a)
@@ -50,21 +38,7 @@ def task_at_index(idx, cols_b, cols_a):
 
 
 def run_instrumented_threaded_multiply(A, B, num_workers):
-    """
-    Exactly the algorithm from matrix_mult.py's threaded_term_matrix_multiply:
-    a shared task queue of (i, j, k), a fixed pool of worker threads pulling
-    from it repeatedly, term = A[i][k] * B[k][j] computed per task, and
-    C[i][j] += term done under a per-result-cell lock. Sentinels stop the
-    pool; all workers are joined at the end.
-
-    Instrumentation added (does not touch the algorithm or its locking):
-      - completed:        a global counter of finished tasks
-      - worker_status:    what each worker is doing right now, for display
-      - events:           a sampled subset of completed tasks, captured
-                           along with a snapshot of every worker's status
-                           and the true completed-count at that moment,
-                           used to drive the animation frames
-    """
+    
     rows_A, cols_A = len(A), len(A[0])
     rows_B, cols_B = len(B), len(B[0])
     if cols_A != rows_B:
@@ -77,7 +51,7 @@ def run_instrumented_threaded_multiply(A, B, num_workers):
     cell_locks = [[threading.Lock() for _ in range(cols_B)] for _ in range(rows_A)]
     task_queue: queue.Queue = queue.Queue()
 
-    instrumentation_lock = threading.Lock()  # protects the bookkeeping below only
+    instrumentation_lock = threading.Lock()  
     completed = 0
     worker_status = [("waiting", None, None, None) for _ in range(num_workers)]
     events = []
@@ -96,12 +70,12 @@ def run_instrumented_threaded_multiply(A, B, num_workers):
             with instrumentation_lock:
                 worker_status[worker_id] = ("processing", i, j, k)
 
-            # --- this block is identical to the real worker_loop ---
+           
             term = A[i][k] * B[k][j]
             with cell_locks[i][j]:
                 C[i][j] += term
                 new_value = C[i][j]
-            # ---------------------------------------------------------
+      
 
             with instrumentation_lock:
                 completed += 1
@@ -144,8 +118,7 @@ def run_instrumented_threaded_multiply(A, B, num_workers):
 
 
 def sparse_verify(A, B, C, samples=8, seed=7):
-    """Spot-check a handful of C[i][j] cells against a direct O(n) sum,
-    as a fast sanity check without redoing the full O(n^3) computation."""
+   
     rng = random.Random(seed)
     rows, cols_b, inner = len(A), len(B[0]), len(A[0])
     max_diff = 0.0
