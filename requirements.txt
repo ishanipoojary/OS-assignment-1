@@ -1,0 +1,3 @@
+# Requirements for Operating Systems Assignment Task 2
+# Python standard library is primarily used (threading, queue, time, random).
+# No external C++/GPU dependencies like TensorRT or NumPy are required for the multiplication calculation.
