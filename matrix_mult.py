@@ -37,17 +37,13 @@ def threaded_term_matrix_multiply(
     if cols_A != rows_B:
         raise ValueError(f"Cannot multiply matrices: A columns ({cols_A}) != B rows ({rows_B})")
 
-    # Initialize 100x100 result matrix with zeros
     C = [[0.0 for _ in range(cols_B)] for _ in range(rows_A)]
 
-    # 2D array of fine-grained locks to prevent race conditions on C[i][j] accumulation
     cell_locks = [[threading.Lock() for _ in range(cols_B)] for _ in range(rows_A)]
 
-    # Task queue with bounded maxsize to efficiently manage memory for 1,000,000 multiplication tasks
     task_queue: queue.Queue = queue.Queue(maxsize=20000)
 
     def worker_loop():
-        """Worker thread entry point processing scalar multiplication tasks."""
         while True:
             task = task_queue.get()
             if task is None:
@@ -66,27 +62,22 @@ def threaded_term_matrix_multiply(
 
             task_queue.task_done()
 
-    # Spawn worker threads using Python threading module
     threads = []
     for w in range(num_workers):
         t = threading.Thread(target=worker_loop, name=f"MatrixWorkerThread-{w+1}")
         threads.append(t)
         t.start()
 
-    # Enqueue all 1,000,000 individual scalar multiplication tasks (i, j, k)
     for i in range(rows_A):
         for j in range(cols_B):
             for k in range(cols_A):
                 task_queue.put((i, j, k))
 
-    # Wait for all 1,000,000 multiplication tasks to complete
     task_queue.join()
 
-    # Signal worker threads to terminate
     for _ in range(num_workers):
         task_queue.put(None)
 
-    # Explicitly join all worker threads
     for t in threads:
         t.join()
 
@@ -115,15 +106,13 @@ def main():
     print("Matrix Dimensions: 100 x 100 (Total 1,000,000 scalar multiplications)")
     print("-" * 80)
 
-    # 1. Programmatically generate 100x100 matrices A and B
-    print("\n[Step 1] Programmatically generating 100x100 matrices A and B...")
+    print("\n[Step 1] Programmatically generating 100x100 matrices A and B.....")
     rows, cols = 100, 100
     matrix_A = generate_matrix(rows, cols, min_val=1, max_val=10, seed=101)
     matrix_B = generate_matrix(cols, cols, min_val=1, max_val=10, seed=202)
     print(f"  - Matrix A created: {len(matrix_A)} rows x {len(matrix_A[0])} cols")
     print(f"  - Matrix B created: {len(matrix_B)} rows x {len(matrix_B[0])} cols")
 
-    # 2. Run Threaded Matrix Multiplication (Term-Level Multithreading)
     num_workers = 16
     print(f"\n[Step 2] Executing Term-Level Threaded Multiplication ({num_workers} worker threads)...")
     print("  - Formula being evaluated on thread: sum[i][j] += A[i][k] * B[k][j]")
@@ -134,29 +123,26 @@ def main():
     t1 = time.perf_counter()
     threaded_time = t1 - t0
 
-    print(f"  [SUCCESS] Threaded multiplication completed in {threaded_time:.4f} seconds.")
+    print(f"  [SUCCESS] Threaded multiplication completed in {threaded_time:.4f} sec...")
     print(f"  - Joined all {num_workers} worker threads with join().")
 
-    # 3. Run Sequential Baseline Matrix Multiplication for Verification
-    print("\n[Step 3] Executing Sequential Reference Multiplication for Verification...")
+    print("\n[Step 3] Executing Sequential Reference Multiplication for Verification......")
     t2 = time.perf_counter()
     C_sequential = sequential_matrix_multiply(matrix_A, matrix_B)
     t3 = time.perf_counter()
     sequential_time = t3 - t2
-    print(f"  - Sequential multiplication completed in {sequential_time:.4f} seconds.")
+    print(f"  - Sequential multiplication completed in {sequential_time:.4f} sec.")
 
-    # 4. Correctness Verification
-    print("\n[Step 4] Verifying Threaded Result vs. Sequential Reference...")
+    print("\n[Step 4] Verifying Threaded Result vs Sequential Reference.........")
     is_correct, max_difference = verify_correctness(C_threaded, C_sequential)
 
     if is_correct:
-        print("  [OK] VERIFICATION PASSED: Threaded matrix result EXACTLY matches sequential result!")
+        print("  [OK] VERIFICATION PASSED: Threaded matrix result matches sequential result exactly")
         print(f"  - Maximum element difference: {max_difference:.6e}")
     else:
-        print("  [FAIL] VERIFICATION FAILED: Discrepancy detected between threaded and sequential results!")
+        print("  [FAIL] VERIFICATION FAILED: Diff between threaded and sequential results")
         print(f"  - Maximum difference: {max_difference:.6e}")
 
-    # Display sample output cell calculations
     print("\n[Sample Result Check]")
     print(f"  - Cell C[0][0] Threaded  : {C_threaded[0][0]:.2f}")
     print(f"  - Cell C[0][0] Sequential: {C_sequential[0][0]:.2f}")
@@ -166,8 +152,8 @@ def main():
     print("\n" + "=" * 80)
     print("  SUMMARY BENCHMARK")
     print("=" * 80)
-    print(f"  Threaded Execution Time  : {threaded_time:.4f} s ({num_workers} threads)")
-    print(f"  Sequential Execution Time: {sequential_time:.4f} s (1 thread)")
+    print(f"  Threaded Exectn Time  : {threaded_time:.4f} s ({num_workers} threads)")
+    print(f"  Sequential Exectn Time: {sequential_time:.4f} s (1 thread)")
     print("=" * 80)
 
 
